@@ -63,7 +63,9 @@
   <exec_depend>roslib</exec_depend>
   <exec_depend>tf</exec_depend>
   <exec_depend>dart</exec_depend>
-
+  <exec_depend>velma_description</exec_depend>
+  <exec_depend>lwr_defs</exec_depend>
+  <exec_depend>barrett_hand_defs</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
