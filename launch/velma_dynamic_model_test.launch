@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+    <param
+      name="/robot_description"
+      command="$(find xacro)/xacro.py '$(find velma_description)/robots/velma.urdf.xacro'" />
+
+    <node
+        name="velma_dynamic_model_test"
+        pkg="velma_dynamic_model"
+        type="velma_dynamic_model_test"
+        output="screen"
+        />
+
+    <node
+        name="rviz"
+        pkg="rviz"
+        type="rviz"
+        args="-d $(find velma_dynamic_model)/rviz/config.rviz"
+        output="screen"
+        />
+</launch>
+
