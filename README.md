@@ -10,7 +10,8 @@ It requires packages with URDF models of the robot:
 
 ## Installation
 
-If you have workspace for Velma installed [https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall](https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall), just clone this repo into src and build.
+This package is intended to be built within a catkin workspace.
+If you have workspace for Velma installed, as described in [https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall](https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall), just clone this repo into src and build.
 
 For stand-alone workspace run the folowing commands:
 
