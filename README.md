@@ -95,4 +95,8 @@ model->step();
 
 ## Experiments
 
+Distribution of computation time is given here:
+
 ![Histogram of computation time](doc/img/computation_time_1.png)
+
+The measurements of computation time were made on Intel(R) Core(TM) i7-6820HQ CPU @ 2.70GHz.
