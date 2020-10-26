@@ -48,3 +48,50 @@ source ~/ws_velma_dyn/devel/setup.bash
 roslaunch velma_dynamic_model velma_dynamic_model_test.launch
 ```
 The last command should load URDF model of Velma robot into ROS param, run rviz and the test program.
+
+## API
+
+The model is implemented in C++ as wrapper for DART library.
+The parameters of kinematics and dynamics are given as URDF file.
+URDF file format specification is availabe in [https://wiki.ros.org/urdf/XML/robot](https://wiki.ros.org/urdf/XML/robot).
+The class for model is declared in [include/velma_dynamic_model/velma_dynamic_model.h](include/velma_dynamic_model/velma_dynamic_model.h).
+It uses 2 ms simulation step, and internal collisions are not computed.
+The example code that uses the library is in file [src/velma_dynamic_model_test.cpp](src/velma_dynamic_model_test.cpp).
+The model can be loaded from ROS parameter server:
+```cpp
+VelmaDynamicModelPtr model = VelmaDynamicModel::createFromRosParam();
+```
+List of all link names:
+```cpp
+std::vector<std::string > link_names = model->getLinkNames();
+```
+To obtain forces for gravity compensation:
+```cpp
+Eigen::VectorXd grav_forces = model->getSkeleton()->getGravityForces();
+```
+Coriolis forces can be obtained using:
+```cpp
+Eigen::VectorXd coriolis_forces = model->getSkeleton()->getCoriolisForces();
+```
+There are also methods that get position and velocity:
+```cpp
+Eigen::VectorXd pos = model->getSkeleton()->getPositions();
+Eigen::VectorXd vel = model->getSkeleton()->getVelocities();
+```
+To apply forces for the nex simulation step:
+```cpp
+model->getSkeleton()->setForces( grav_forces + coriolis_forces + cmd_ext_forces );
+```
+Forward kinematics for link with name link_name:
+```cpp
+Eigen::Isometry3d T_B_L;
+model->getFk(link_name, T_B_L);
+```
+Finally, to simulate one simulation step:
+```cpp
+model->step();
+```
+
+## Experiments
+
+![Histogram of computation time](doc/img/computation_time_1.png)
