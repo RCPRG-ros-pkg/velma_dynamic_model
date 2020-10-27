@@ -71,6 +71,7 @@ You can access DART class for the robot model using method:
 model->getSkeleton()
 ```
 This class is documented in DART API reference: [https://dartsim.github.io/api/v6.3.0/d3/d19/classdart_1_1dynamics_1_1Skeleton.html](https://dartsim.github.io/api/v6.3.0/d3/d19/classdart_1_1dynamics_1_1Skeleton.html)
+
 To obtain forces for gravity compensation:
 ```cpp
 Eigen::VectorXd grav_forces = model->getSkeleton()->getGravityForces();
