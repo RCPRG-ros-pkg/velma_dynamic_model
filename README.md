@@ -10,7 +10,8 @@ It requires packages with URDF models of the robot:
 
 ## Installation
 
-If you have workspace for Velma installed [https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall](https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall), just clone this repo into src and build.
+This package is intended to be built within a catkin workspace.
+If you have workspace for Velma installed, as described in [https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall](https://github.com/RCPRG-ros-pkg/RCPRG_rosinstall), just clone this repo into src and build.
 
 For stand-alone workspace run the folowing commands:
 
@@ -65,6 +66,12 @@ List of all link names:
 ```cpp
 std::vector<std::string > link_names = model->getLinkNames();
 ```
+You can access DART class for the robot model using method:
+```cpp
+model->getSkeleton()
+```
+This class is documented in DART API reference: [https://dartsim.github.io/api/v6.3.0/d3/d19/classdart_1_1dynamics_1_1Skeleton.html](https://dartsim.github.io/api/v6.3.0/d3/d19/classdart_1_1dynamics_1_1Skeleton.html)
+
 To obtain forces for gravity compensation:
 ```cpp
 Eigen::VectorXd grav_forces = model->getSkeleton()->getGravityForces();
@@ -94,4 +101,8 @@ model->step();
 
 ## Experiments
 
+Distribution of computation time is given here:
+
 ![Histogram of computation time](doc/img/computation_time_1.png)
+
+The measurements of computation time were made on Intel(R) Core(TM) i7-6820HQ CPU @ 2.70GHz.
