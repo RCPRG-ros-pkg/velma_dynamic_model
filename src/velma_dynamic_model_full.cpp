@@ -40,9 +40,10 @@
 #include <dart/utils/PackageResourceRetriever.hpp>
 #include <dart/utils/urdf/urdf.hpp>
 
-#include <velma_dynamic_model/velma_dynamic_model.h>
+#include <velma_dynamic_model/velma_dynamic_model_full.h>
 
-VelmaDynamicModelPtr VelmaDynamicModel::createFromRosParam() {
+VelmaDynamicModelFullPtr VelmaDynamicModelFull::createFromRosParam(
+                                            const std::vector<std::string >& controlled_joints) {
     // Add paths of ROS packages
     dart::utils::PackageResourceRetrieverPtr resource_retriever(
                                                     new dart::utils::PackageResourceRetriever());
@@ -56,7 +57,7 @@ VelmaDynamicModelPtr VelmaDynamicModel::createFromRosParam() {
         if (path.empty()) {
             std::cout << "ERROR: Path for package \"" << required_packages[i]
                         << "\" could not be found."<< std::endl;
-            return VelmaDynamicModelPtr();
+            return VelmaDynamicModelFullPtr();
         }
         //std::cout << "Package \"" << required_packages[i] << "\" is in path " << path <<std::endl;
         resource_retriever->addPackageDirectory(required_packages[i], path);
@@ -67,48 +68,73 @@ VelmaDynamicModelPtr VelmaDynamicModel::createFromRosParam() {
     std::string robot_description;
     if (!nh.getParam("/robot_description", robot_description)) {
         std::cout << "ERROR: Could not get \"robot_description\" ROS parameter" << std::endl;
-        return VelmaDynamicModelPtr();
+        return VelmaDynamicModelFullPtr();
     }
 
     dart::utils::DartLoader loader;
     dart::dynamics::SkeletonPtr sk = loader.parseSkeletonString(robot_description,
                                                         dart::common::Uri(), resource_retriever);
 
-    VelmaDynamicModelPtr result( new VelmaDynamicModel(sk) );
+    VelmaDynamicModelFullPtr result( new VelmaDynamicModelFull(sk, controlled_joints) );
     return result;
 }
 
-VelmaDynamicModel::VelmaDynamicModel(dart::dynamics::SkeletonPtr &sk)
-: sk_(sk)
-, world_(new dart::simulation::World()) {
-    sk_->disableSelfCollisionCheck();
-    world_->addSkeleton(sk);
-    Eigen::Vector3d grav(0,0,-9.8);
-    world_->setGravity(grav);
-    world_->setTimeStep(0.002);
+VelmaDynamicModelFull::VelmaDynamicModelFull(dart::dynamics::SkeletonPtr &sk,
+        const std::vector<std::string >& controlled_joints)
+: VelmaDynamicModelBase(sk, controlled_joints) {
 }
 
-void VelmaDynamicModel::step() {
+void VelmaDynamicModelFull::getGravityForces(Eigen::VectorXd &result) const {
+    const Eigen::VectorXd& grav_forces = sk_->getGravityForces();
+    for (int jnt_idx = 0; jnt_idx < controlled_joints_idx_map_.size(); ++jnt_idx) {
+        int q_idx = controlled_joints_idx_map_[jnt_idx];
+        result[jnt_idx] = grav_forces[q_idx];
+    }    
+}
+
+void VelmaDynamicModelFull::getCoriolisForces(Eigen::VectorXd &result) const {
+    const Eigen::VectorXd coriolis_forces = sk_->getCoriolisForces();
+    for (int jnt_idx = 0; jnt_idx < controlled_joints_idx_map_.size(); ++jnt_idx) {
+        int q_idx = controlled_joints_idx_map_[jnt_idx];
+        result[jnt_idx] = coriolis_forces[q_idx];
+    }    
+}
+
+void VelmaDynamicModelFull::getPositions(Eigen::VectorXd &result) const {
+    for (int jnt_idx = 0; jnt_idx < controlled_joints_idx_map_.size(); ++jnt_idx) {
+        int q_idx = controlled_joints_idx_map_[jnt_idx];
+        result[jnt_idx] = sk_->getPosition(q_idx);
+    }
+}
+
+void VelmaDynamicModelFull::setPositions(const Eigen::VectorXd &pos) {
+    for (int jnt_idx = 0; jnt_idx < controlled_joints_idx_map_.size(); ++jnt_idx) {
+        int q_idx = controlled_joints_idx_map_[jnt_idx];
+        sk_->setPosition(q_idx, pos[jnt_idx]);
+    }
+}
+
+void VelmaDynamicModelFull::getVelocities(Eigen::VectorXd &result) const {
+    for (int jnt_idx = 0; jnt_idx < controlled_joints_idx_map_.size(); ++jnt_idx) {
+        int q_idx = controlled_joints_idx_map_[jnt_idx];
+        result[jnt_idx] = sk_->getVelocity(q_idx);
+    }
+}
+
+void VelmaDynamicModelFull::setVelocities(const Eigen::VectorXd &vel) {
+    for (int jnt_idx = 0; jnt_idx < controlled_joints_idx_map_.size(); ++jnt_idx) {
+        int q_idx = controlled_joints_idx_map_[jnt_idx];
+        sk_->setVelocity(q_idx, vel[jnt_idx]);
+    }
+}
+
+void VelmaDynamicModelFull::setForces(const Eigen::VectorXd &force) {
+    for (int jnt_idx = 0; jnt_idx < controlled_joints_idx_map_.size(); ++jnt_idx) {
+        int q_idx = controlled_joints_idx_map_[jnt_idx];
+        sk_->setForce(q_idx, force[jnt_idx]);
+    }
+}
+
+void VelmaDynamicModelFull::step() {
     world_->step(false);     // resetCommand = false
-}
-
-bool VelmaDynamicModel::getFk(const std::string &link_name, Eigen::Isometry3d &T_B_L) const {
-    dart::dynamics::BodyNode *b = sk_->getBodyNode(link_name);
-    if (!b) {
-        return false;
-    }
-    T_B_L = b->getTransform();
-    return true;
-}
-
-std::vector<std::string > VelmaDynamicModel::getLinkNames() const {
-    std::vector<std::string > result;
-    for (int bidx = 0; bidx < sk_->getNumBodyNodes(); bidx++) {
-        result.push_back( sk_->getBodyNode(bidx)->getName() );
-    }
-    return result;
-}
-
-dart::dynamics::SkeletonPtr VelmaDynamicModel::getSkeleton() {
-    return sk_;
 }

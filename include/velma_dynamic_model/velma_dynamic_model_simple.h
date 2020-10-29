@@ -29,8 +29,8 @@
 // Author: Dawid Seredynski
 //
 
-#ifndef __VELMA_DYNAMIC_MODEL_HPP__
-#define __VELMA_DYNAMIC_MODEL_HPP__
+#ifndef __VELMA_DYNAMIC_MODEL_SIMPLE_HPP__
+#define __VELMA_DYNAMIC_MODEL_SIMPLE_HPP__
 
 #include <ros/ros.h>
 #include "ros/package.h"
@@ -42,24 +42,37 @@
 #include <dart/dynamics/Skeleton.hpp>
 #include <dart/simulation/World.hpp>
 
-class VelmaDynamicModel;
-typedef std::shared_ptr<VelmaDynamicModel> VelmaDynamicModelPtr;
+#include <velma_dynamic_model/velma_dynamic_model_base.h>
 
-class VelmaDynamicModel {
+class VelmaDynamicModelSimple;
+typedef std::shared_ptr<VelmaDynamicModelSimple> VelmaDynamicModelSimplePtr;
+
+class VelmaDynamicModelSimple : public VelmaDynamicModelBase {
 private:
-	dart::dynamics::SkeletonPtr sk_;
-	dart::simulation::WorldPtr world_;
-    VelmaDynamicModel(dart::dynamics::SkeletonPtr &sk);
+	Eigen::VectorXd damping_;
+	Eigen::VectorXd inertia_;
+	Eigen::VectorXd pos_;
+	Eigen::VectorXd vel_;
+	Eigen::VectorXd forces_;
+	Eigen::VectorXd grav_forces_;
+    VelmaDynamicModelSimple(dart::dynamics::SkeletonPtr &sk,
+    								const std::vector<std::string >& controlled_joints,
+    								const Eigen::VectorXd& damping, const Eigen::VectorXd& inertia);
 
 public:
-	void step();
 
-	bool getFk(const std::string &link_name, Eigen::Isometry3d &T_B_L) const;
-	std::vector<std::string > getLinkNames() const;
+	virtual void getGravityForces(Eigen::VectorXd &result) const;
+	virtual void getCoriolisForces(Eigen::VectorXd &result) const;
+	virtual void getPositions(Eigen::VectorXd &result) const;
+	virtual void setPositions(const Eigen::VectorXd &pos);
+	virtual void getVelocities(Eigen::VectorXd &result) const;
+	virtual void setVelocities(const Eigen::VectorXd &vel);
+	virtual void setForces(const Eigen::VectorXd &force);
+	virtual void step();
 
-	dart::dynamics::SkeletonPtr getSkeleton();
-
-    static VelmaDynamicModelPtr createFromRosParam();
+    static VelmaDynamicModelSimplePtr createFromRosParam(
+    								const std::vector<std::string >& controlled_joints,
+    								const Eigen::VectorXd& damping, const Eigen::VectorXd& inertia);
 };
 
-#endif  // __VELMA_DYNAMIC_MODEL_HPP__
+#endif  // __VELMA_DYNAMIC_MODEL_SIMPLE_HPP__

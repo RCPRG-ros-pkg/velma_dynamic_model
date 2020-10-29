@@ -127,7 +127,9 @@ include_directories(
 
 ## Declare a C++ library
 add_library(velma_dynamic_model
-	src/velma_dynamic_model.cpp
+  src/velma_dynamic_model_base.cpp
+  src/velma_dynamic_model_simple.cpp
+  src/velma_dynamic_model_full.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -140,7 +142,9 @@ add_library(velma_dynamic_model
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(velma_dynamic_model_test
 	src/velma_dynamic_model_test.cpp
-	src/velma_dynamic_model.cpp
+  src/velma_dynamic_model_base.cpp
+  src/velma_dynamic_model_simple.cpp
+  src/velma_dynamic_model_full.cpp
 )
 
 ## Rename C++ executable without prefix

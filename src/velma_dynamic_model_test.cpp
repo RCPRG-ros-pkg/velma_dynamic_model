@@ -38,7 +38,8 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <velma_dynamic_model/velma_dynamic_model.h>
+#include <velma_dynamic_model/velma_dynamic_model_simple.h>
+#include <velma_dynamic_model/velma_dynamic_model_full.h>
 
 void publishTransform(tf::TransformBroadcaster &br, const Eigen::Isometry3d &T,
                                  const std::string &frame_id, const std::string &base_frame_id) {
@@ -59,7 +60,17 @@ double getInterval(struct timespec &t1, struct timespec &t2) {
     return double(sec) + double(nsec)/1000000000.0;
 }
 
+void printUsage() {
+    std::cout << "Usage:" << std::endl;
+    std::cout << "velma_dynamic_model_test simple|full" << std::endl;
+}
+
 int main(int argc, char** argv) {
+    if (argc != 2) {
+        printUsage();
+        return 0;
+    }
+
     ros::init(argc, argv, "velma_dynamic_model_test");
     ros::NodeHandle n;
 
@@ -73,20 +84,7 @@ int main(int argc, char** argv) {
         ros::Duration(1.0).sleep();
     }
 
-    VelmaDynamicModelPtr model = VelmaDynamicModel::createFromRosParam();
-    if (!model) {
-        std::cout << "ERROR: could not create model." << std::endl;
-        return -1;
-    }
-    tf::TransformBroadcaster br;
-
-    std::vector<std::string > link_names = model->getLinkNames();
-    std::cout << "Links:" << std::endl;
-    for (int i = 0; i < link_names.size(); ++i) {
-        std::cout << "    " << link_names[i] << std::endl;
-    }
-
-    std::vector<std::string > moveable_joints = {
+    const std::vector<std::string > moveable_joints = {
         "torso_0_joint",
         "right_arm_0_joint",
         "right_arm_1_joint",
@@ -103,50 +101,76 @@ int main(int argc, char** argv) {
         "left_arm_5_joint",
         "left_arm_6_joint",
     };
-    std::vector<double > joint_pos_des = {0, -0.3, -1.8, 1.25, 0.85, 0, -0.5, 0,
-                                                        0.3, 1.8, -1.25, -0.85, 0, 0.5, 0};
-    std::vector<int> moveable_joints_idx_map;
-    for (int mov_jnt_idx = 0; mov_jnt_idx < moveable_joints.size(); ++mov_jnt_idx) {
-        const std::string& moveable_joint_name = moveable_joints[mov_jnt_idx];
-        dart::dynamics::Joint *joint = model->getSkeleton()->getJoint(moveable_joint_name);
-        int q_idx = joint->getIndexInSkeleton(0);
-        moveable_joints_idx_map.push_back( q_idx );
-        std::cout << "Joint \"" << moveable_joint_name << "\" has index " << q_idx << std::endl;
+
+    VelmaDynamicModelBasePtr model;
+    if (std::string(argv[1]) == std::string("simple")) {
+        // Set parameters specific to the simple model to some values
+        Eigen::VectorXd damping(moveable_joints.size());
+        Eigen::VectorXd inertia(moveable_joints.size());
+        for (int i = 0; i < moveable_joints.size(); ++i) {
+            damping[i] = 0.001;
+            inertia[i] = 0.1;
+        }
+        model = VelmaDynamicModelSimple::createFromRosParam(moveable_joints, damping, inertia);
+    }
+    else if (std::string(argv[1]) == std::string("full")) {
+        model = VelmaDynamicModelFull::createFromRosParam(moveable_joints);
+    }
+    else {
+        printUsage();
+        return 0;
     }
 
-    double stiffness = 2.0;
-    double damping = 2.0;
+    if (!model) {
+        std::cout << "ERROR: could not create model." << std::endl;
+        return -1;
+    }
+    tf::TransformBroadcaster br;
+
+    std::vector<std::string > link_names = model->getLinkNames();
+    //std::cout << "Links:" << std::endl;
+    //for (int i = 0; i < link_names.size(); ++i) {
+    //    std::cout << "    " << link_names[i] << std::endl;
+    //}
+
+    std::vector<double > joint_pos_des = {0, -0.3, -1.8, 1.25, 0.85, 0, -0.5, 0,
+                                                        0.3, 1.8, -1.25, -0.85, 0, 0.5, 0};
+
+    double ctrl_stiffness = 2.0;
+    double ctrl_damping = 2.0;
 
     ros::Rate loop_rate(500);
     clockid_t clock_id = CLOCK_REALTIME;
     //clockid_t clock_id = CLOCK_MONOTONIC;
     //clockid_t clock_id = CLOCK_PROCESS_CPUTIME_ID;
     struct timespec prev_t1;
+    Eigen::VectorXd pos( moveable_joints.size() );
+    Eigen::VectorXd vel( moveable_joints.size() );
+    Eigen::VectorXd grav_forces( moveable_joints.size() );
+    Eigen::VectorXd cmd_ext_forces( moveable_joints.size() );
+    Eigen::VectorXd total_forces( moveable_joints.size() );
     while (ros::ok()) {
-        Eigen::VectorXd grav_forces = model->getSkeleton()->getGravityForces();
-        Eigen::VectorXd cmd_ext_forces(grav_forces.size());
-        cmd_ext_forces.setZero();
-        Eigen::VectorXd pos = model->getSkeleton()->getPositions();
-        Eigen::VectorXd vel = model->getSkeleton()->getVelocities();
+        model->getGravityForces(grav_forces);
+        model->getPositions(pos);
+        model->getVelocities(vel);
 
-        for (int mov_jnt_idx = 0; mov_jnt_idx < moveable_joints.size(); ++mov_jnt_idx) {
-            int q_idx = moveable_joints_idx_map[mov_jnt_idx];
-            double err = joint_pos_des[mov_jnt_idx] - pos[q_idx];
-            double force = stiffness*err - vel[q_idx]*damping;
-            cmd_ext_forces[q_idx] = force;
+        for (int jnt_idx = 0; jnt_idx < moveable_joints.size(); ++jnt_idx) {
+            double err = joint_pos_des[jnt_idx] - pos[jnt_idx];
+            double force = ctrl_stiffness*err - vel[jnt_idx]*ctrl_damping;
+            cmd_ext_forces[jnt_idx] = force;
+
+            total_forces[jnt_idx] = grav_forces[jnt_idx] + cmd_ext_forces[jnt_idx];
         }
 
-        model->getSkeleton()->setForces( grav_forces + cmd_ext_forces );
+        model->setForces( total_forces );
         struct timespec t1, t2;
         clock_gettime(clock_id, &t1);
 
         model->step();
-        //grav_forces = model->getSkeleton()->getGravityForces();
-        //Eigen::VectorXd coriolis_forces = model->getSkeleton()->getCoriolisForces();
 
         clock_gettime(clock_id, &t2);
         double step_time_ms = 1000.0*getInterval(t1, t2);
-        //std::cout << step_time_ms << std::endl;
+        std::cout << step_time_ms << std::endl;
         //std::cout << getInterval(prev_t1, t1) << std::endl;
         prev_t1 = t1;
 
