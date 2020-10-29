@@ -4,11 +4,14 @@
       name="/robot_description"
       command="$(find xacro)/xacro.py '$(find velma_description)/robots/velma.urdf.xacro'" />
 
+    <arg name="model_type" />
+
     <node
         name="velma_dynamic_model_test"
         pkg="velma_dynamic_model"
         type="velma_dynamic_model_test"
         output="screen"
+        args="$(arg model_type)"
         />
 
     <node

@@ -66,11 +66,6 @@ void printUsage() {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 2) {
-        printUsage();
-        return 0;
-    }
-
     ros::init(argc, argv, "velma_dynamic_model_test");
     ros::NodeHandle n;
 
@@ -139,6 +134,7 @@ int main(int argc, char** argv) {
     double ctrl_stiffness = 2.0;
     double ctrl_damping = 2.0;
 
+    const std::string end_effector_name = "right_arm_7_link";
     ros::Rate loop_rate(500);
     clockid_t clock_id = CLOCK_REALTIME;
     //clockid_t clock_id = CLOCK_MONOTONIC;
@@ -167,6 +163,12 @@ int main(int argc, char** argv) {
         clock_gettime(clock_id, &t1);
 
         model->step();
+
+        {
+            // Test computation time for FK
+            Eigen::Isometry3d T_B_L;
+            model->getFk(end_effector_name, T_B_L);
+        }
 
         clock_gettime(clock_id, &t2);
         double step_time_ms = 1000.0*getInterval(t1, t2);
