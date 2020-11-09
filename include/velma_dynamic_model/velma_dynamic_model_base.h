@@ -54,6 +54,7 @@ protected:
 	std::vector<int> controlled_joints_idx_map_;
     VelmaDynamicModelBase(dart::dynamics::SkeletonPtr &sk,
     										const std::vector<std::string >& controlled_joints);
+    Eigen::Vector3d grav_;
 
 public:
 
@@ -65,6 +66,10 @@ public:
 	virtual void setVelocities(const Eigen::VectorXd &vel) = 0;
 	virtual void setForces(const Eigen::VectorXd &force) = 0;
 	virtual void step() = 0;
+
+    virtual void computeGravComp(Eigen::VectorXd& result) = 0;
+
+    const Eigen::Vector3d& getGravVector() const;
 
 	bool getFk(const std::string &link_name, Eigen::Isometry3d &T_B_L) const;
 	std::vector<std::string > getLinkNames() const;

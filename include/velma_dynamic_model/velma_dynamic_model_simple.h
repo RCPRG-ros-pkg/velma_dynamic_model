@@ -58,6 +58,9 @@ private:
     VelmaDynamicModelSimple(dart::dynamics::SkeletonPtr &sk,
     								const std::vector<std::string >& controlled_joints,
     								const Eigen::VectorXd& damping, const Eigen::VectorXd& inertia);
+    std::vector<dart::dynamics::BodyNode* > bn_list_;
+    Eigen::Vector3d com_ee_;
+    double mass_ee_;
 
 public:
 
@@ -69,6 +72,8 @@ public:
 	virtual void setVelocities(const Eigen::VectorXd &vel);
 	virtual void setForces(const Eigen::VectorXd &force);
 	virtual void step();
+
+    virtual void computeGravComp(Eigen::VectorXd& result);
 
     static VelmaDynamicModelSimplePtr createFromRosParam(
     								const std::vector<std::string >& controlled_joints,

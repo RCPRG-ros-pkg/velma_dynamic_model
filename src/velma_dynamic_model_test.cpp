@@ -145,10 +145,23 @@ int main(int argc, char** argv) {
     Eigen::VectorXd grav_forces( moveable_joints.size() );
     Eigen::VectorXd cmd_ext_forces( moveable_joints.size() );
     Eigen::VectorXd total_forces( moveable_joints.size() );
+
+    Eigen::VectorXd grav_forces2(7);
+    ros::Duration(4.0).sleep();
+    const double eps = 0.0000000001;
+
     while (ros::ok()) {
         model->getGravityForces(grav_forces);
         model->getPositions(pos);
         model->getVelocities(vel);
+
+        // Compare DART and equations in the report
+        model->computeGravComp(grav_forces2);
+        for (int i = 0; i < 7; ++i) {
+            if ( fabs(grav_forces[i+1] - grav_forces2[i]) > eps) {
+                std::cout << "error: two methods of computing gravity forces differ" << std::endl;
+            }
+        }
 
         for (int jnt_idx = 0; jnt_idx < moveable_joints.size(); ++jnt_idx) {
             double err = joint_pos_des[jnt_idx] - pos[jnt_idx];
@@ -172,7 +185,7 @@ int main(int argc, char** argv) {
 
         clock_gettime(clock_id, &t2);
         double step_time_ms = 1000.0*getInterval(t1, t2);
-        std::cout << step_time_ms << std::endl;
+        //std::cout << step_time_ms << std::endl;
         //std::cout << getInterval(prev_t1, t1) << std::endl;
         prev_t1 = t1;
 
@@ -183,6 +196,7 @@ int main(int argc, char** argv) {
         }
         ros::spinOnce();
         loop_rate.sleep();
+        //break;
     }
 
     return 0;

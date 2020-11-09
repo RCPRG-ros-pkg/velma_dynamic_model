@@ -63,6 +63,8 @@ public:
 	virtual void setForces(const Eigen::VectorXd &force);
 	virtual void step();
 
+    virtual void computeGravComp(Eigen::VectorXd& result) {};
+
     static VelmaDynamicModelFullPtr createFromRosParam(
     										const std::vector<std::string >& controlled_joints);
 };

@@ -47,7 +47,8 @@ VelmaDynamicModelBase::VelmaDynamicModelBase(dart::dynamics::SkeletonPtr &sk,
 : sk_(sk)
 , controlled_joints_(controlled_joints)
 , world_(new dart::simulation::World())
-, time_step_(0.002) {
+, time_step_(0.002)
+, grav_(0,0,-9.8) {
 
     for (int jnt_idx = 0; jnt_idx < controlled_joints_.size(); ++jnt_idx) {
         const std::string& moveable_joint_name = controlled_joints_[jnt_idx];
@@ -59,9 +60,12 @@ VelmaDynamicModelBase::VelmaDynamicModelBase(dart::dynamics::SkeletonPtr &sk,
 
     sk_->disableSelfCollisionCheck();
     world_->addSkeleton(sk);
-    Eigen::Vector3d grav(0,0,-9.8);
-    world_->setGravity(grav);
+    world_->setGravity(grav_);
     world_->setTimeStep(time_step_);
+}
+
+const Eigen::Vector3d& VelmaDynamicModelBase::getGravVector() const {
+    return grav_;       
 }
 
 bool VelmaDynamicModelBase::getFk(const std::string &link_name, Eigen::Isometry3d &T_B_L) const {
