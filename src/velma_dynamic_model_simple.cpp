@@ -172,6 +172,11 @@ void VelmaDynamicModelSimple::computeGravComp(Eigen::VectorXd& result) {
 
         Eigen::Vector3d i_i_N = i_i1_R * i1_i1_N + i_Ci_P.cross(i_i_F) + (i_i1_P - i_Ci_P).cross(i_i1_R * i1_i1_F);
 
+        //std::cout << "i: " << i << ", Mi: " << Mi
+        //        << ", i_Ci_P: " << i_Ci_P[0] << ", " << i_Ci_P[1] << ", " << i_Ci_P[2]
+        //        << ", i_i1_P: " << i_i1_P[0] << ", " << i_i1_P[1] << ", " << i_i1_P[2]
+        //        << ", i_i_z: " << i_i_z[0] << ", " << i_i_z[1] << ", " << i_i_z[2] << std::endl;
+
         // i_i_N - inter-link interaction torques
         // i_i_z - joint axis
         double torque_i = i_i_N[0]*i_i_z[0] + i_i_N[1]*i_i_z[1] + i_i_N[2]*i_i_z[2];
