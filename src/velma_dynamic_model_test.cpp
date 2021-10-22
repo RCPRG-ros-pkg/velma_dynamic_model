@@ -155,11 +155,18 @@ int main(int argc, char** argv) {
         model->getPositions(pos);
         model->getVelocities(vel);
 
+        std::cout << "pos: [" << pos[1] << "," << pos[2] << "," << pos[3] << ","
+                << pos[4] << "," << pos[5] << "," << pos[6] << "," << pos[7] << "," << pos[0] << "], tau_g: ["
+                << grav_forces[1] << "," << grav_forces[2] << "," << grav_forces[3] << ","
+                << grav_forces[4] << "," << grav_forces[5] << "," << grav_forces[6] << ","
+                << grav_forces[7] << "," << grav_forces[0] << "]" << std::endl;
+
         // Compare DART and equations in the report
         model->computeGravComp(grav_forces2);
         for (int i = 0; i < 7; ++i) {
-            if ( fabs(grav_forces[i+1] - grav_forces2[i]) > eps) {
-                std::cout << "error: two methods of computing gravity forces differ" << std::endl;
+            double diff = fabs(grav_forces[i+1] - grav_forces2[i]);
+            if ( diff > eps) {
+                std::cout << "error: two methods of computing gravity forces differ by " << diff << std::endl;
             }
         }
 
