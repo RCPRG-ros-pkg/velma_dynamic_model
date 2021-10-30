@@ -149,6 +149,7 @@ int main(int argc, char** argv) {
     Eigen::VectorXd grav_forces2(7);
     ros::Duration(4.0).sleep();
     const double eps = 0.0000000001;
+    const double eps_err = 0.02;
 
     while (ros::ok()) {
         model->getGravityForces(grav_forces);
@@ -166,6 +167,9 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 7; ++i) {
             double diff = fabs(grav_forces[i+1] - grav_forces2[i]);
             if ( diff > eps) {
+                //std::cout << "warning: two methods of computing gravity forces differ by " << diff << std::endl;
+            }
+            if ( diff > eps_err) {
                 std::cout << "error: two methods of computing gravity forces differ by " << diff << std::endl;
             }
         }
