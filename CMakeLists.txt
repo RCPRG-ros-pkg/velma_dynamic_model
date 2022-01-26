@@ -146,6 +146,7 @@ add_executable(velma_dynamic_model_test
   src/velma_dynamic_model_simple.cpp
   src/velma_dynamic_model_full.cpp
   src/grav_comp.cpp
+  src/fk.cpp
 )
 
 ## Rename C++ executable without prefix
