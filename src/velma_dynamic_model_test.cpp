@@ -41,6 +41,8 @@
 #include <velma_dynamic_model/velma_dynamic_model_simple.h>
 #include <velma_dynamic_model/velma_dynamic_model_full.h>
 
+#include "fk.h"
+
 void publishTransform(tf::TransformBroadcaster &br, const Eigen::Isometry3d &T,
                                  const std::string &frame_id, const std::string &base_frame_id) {
     Eigen::Quaterniond q(T.rotation());
@@ -151,6 +153,11 @@ int main(int argc, char** argv) {
     const double eps = 0.0000000001;
     const double eps_err = 0.02;
 
+    const int TIMES_SIZE = 1000;
+    double t_fk_num[TIMES_SIZE];
+    double t_fk_an[TIMES_SIZE];
+    int t_idx;
+
     while (ros::ok()) {
         model->getGravityForces(grav_forces);
         model->getPositions(pos);
@@ -184,8 +191,48 @@ int main(int argc, char** argv) {
 
         model->setForces( total_forces );
         struct timespec t1, t2;
-        clock_gettime(clock_id, &t1);
 
+        Eigen::Isometry3d fk_dart;
+        model->getFk("right_arm_7_link", fk_dart);
+
+        Eigen::Matrix4d fk_dart2 = fk_dart.matrix();
+
+        clock_gettime(clock_id, &t1);
+        Eigen::Matrix4d fk_num;
+        computeFKr_num(pos, fk_num);
+        clock_gettime(clock_id, &t2);
+        double fk_num_time_ms = 1000.0*getInterval(t1, t2);
+        t_fk_num[t_idx] = fk_num_time_ms;
+
+        clock_gettime(clock_id, &t1);
+        Eigen::Matrix4d fk_an;
+        computeFKr_an(pos, fk_an);
+        clock_gettime(clock_id, &t2);
+        double fk_an_time_ms = 1000.0*getInterval(t1, t2);
+        t_fk_an[t_idx] = fk_an_time_ms;
+        t_idx++;
+        if (t_idx >= TIMES_SIZE) {
+            for (int i = 0; i < TIMES_SIZE; ++i) {
+                std::cout << t_fk_num[i] << ", " << t_fk_an[i] << std::endl;
+            }
+            return 0;
+        }
+
+        std::cout << "**** FK test ****" << std::endl;
+        std::cout << "dart:" << std::endl;
+        std::cout << fk_dart2 << std::endl;
+
+        std::cout << "num:" << std::endl;
+        std::cout << fk_num << std::endl;
+        std::cout << fk_dart * fk_num.inverse() << std::endl;
+
+        std::cout << "an:" << std::endl;
+        std::cout << fk_an << std::endl;
+        std::cout << fk_dart * fk_an.inverse() << std::endl;
+
+        std::cout << "times: fk_num_time_ms: " << fk_num_time_ms << ", fk_an_time_ms: " << fk_an_time_ms << std::endl;
+
+        clock_gettime(clock_id, &t1);
         model->step();
 
         {
