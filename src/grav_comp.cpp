@@ -80,13 +80,13 @@ void computeGravComp(const Eigen::VectorXd& q, Eigen::VectorXd& result) {
 
     std::array<Eigen::Isometry3d, 7> arr_fk;
     arr_fk[0] = T_0_1 * T_1_2;
-    std::cout << "FK for i=" << 0 << ":" << std::endl;
-    printFrame(arr_fk[0]);
+    //std::cout << "FK for i=" << 0 << ":" << std::endl;
+    //printFrame(arr_fk[0]);
     // Calculate forward kinematics
     for (int i = 1; i < 7; ++i) {
         arr_fk[i] = arr_fk[i-1] * arr_T_i_i[i+1];
-        std::cout << "FK for i=" << i << ":" << std::endl;
-        printFrame(arr_fk[i]);
+        //std::cout << "FK for i=" << i << ":" << std::endl;
+        //printFrame(arr_fk[i]);
     }
 
     // Calculate gravity compensation forces

@@ -156,11 +156,11 @@ int main(int argc, char** argv) {
         model->getPositions(pos);
         model->getVelocities(vel);
 
-        std::cout << "pos: [" << pos[1] << "," << pos[2] << "," << pos[3] << ","
-                << pos[4] << "," << pos[5] << "," << pos[6] << "," << pos[7] << "," << pos[0] << "], tau_g: ["
-                << grav_forces[1] << "," << grav_forces[2] << "," << grav_forces[3] << ","
-                << grav_forces[4] << "," << grav_forces[5] << "," << grav_forces[6] << ","
-                << grav_forces[7] << "," << grav_forces[0] << "]" << std::endl;
+        //std::cout << "pos: [" << pos[1] << "," << pos[2] << "," << pos[3] << ","
+        //        << pos[4] << "," << pos[5] << "," << pos[6] << "," << pos[7] << "," << pos[0] << "], tau_g: ["
+        //        << grav_forces[1] << "," << grav_forces[2] << "," << grav_forces[3] << ","
+        //        << grav_forces[4] << "," << grav_forces[5] << "," << grav_forces[6] << ","
+        //        << grav_forces[7] << "," << grav_forces[0] << "]" << std::endl;
 
         // Compare DART and equations in the report
         model->computeGravComp(grav_forces2);
@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
                 //std::cout << "warning: two methods of computing gravity forces differ by " << diff << std::endl;
             }
             if ( diff > eps_err) {
-                std::cout << "error: two methods of computing gravity forces differ by " << diff << std::endl;
+                //std::cout << "error: two methods of computing gravity forces differ by " << diff << std::endl;
             }
         }
 
@@ -196,7 +196,7 @@ int main(int argc, char** argv) {
 
         clock_gettime(clock_id, &t2);
         double step_time_ms = 1000.0*getInterval(t1, t2);
-        //std::cout << step_time_ms << std::endl;
+        std::cout << step_time_ms << std::endl;
         //std::cout << getInterval(prev_t1, t1) << std::endl;
         prev_t1 = t1;
 
